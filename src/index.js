@@ -53,6 +53,7 @@ class Game extends React.Component {
       history : [{
         squares: Array(9).fill(null),
       }],
+      boardAtMove: 0,
       xIsNext: true,
     }
   }
@@ -63,7 +64,7 @@ class Game extends React.Component {
 
   __getCurrentBoard() {
     const history = this.__getBoardHistory();
-    return history[history.length - 1];  
+    return history[this.state.boardAtMove];
   }
     
   handleClick(i) {
@@ -73,11 +74,21 @@ class Game extends React.Component {
       return;
     }
     squares[i] = this.state.xIsNext ? 'X' : 'O';
+    
+    const currentMove = this.state.boardAtMove;
     this.setState({
-      history: this.state.history.concat([{
+      history: this.__getBoardHistory().slice(0, currentMove + 1).concat([{
         squares,
       }]),
+      boardAtMove: currentMove + 1,
       xIsNext: !this.state.xIsNext,
+    });
+  }
+
+  goToGameAt(moveNum) {
+    this.setState({
+      boardAtMove: moveNum,
+      xIsNext: (moveNum % 2) === 0,
     });
   }
 
@@ -85,11 +96,24 @@ class Game extends React.Component {
     const current = this.__getCurrentBoard();
     const winner = calculateWinner(current.squares);
     
-//    const history = __getBoardHistory();
-//    const moves = history.map((step, move) => {
-//      const desc = move ?
-    
-	  
+    const history = this.__getBoardHistory();
+    const playList = history.map((currBoard, moveNum) => {
+      let boardDescription;
+      if (moveNum === 0) {
+        boardDescription = 'Go to game start';
+      } else if (moveNum === history.length - 1) {
+        boardDescription = 'Go to most recent move';
+      } else { // 0 < moveNum < this.state.boardAtMove 
+        boardDescription = 'Go to move #' + moveNum;
+      }
+
+      return (
+        <li key={moveNum}>
+          <button onClick={() => this.goToGameAt(moveNum)}>{boardDescription}</button>
+        </li>
+      );
+    });
+
     let status;
     if (winner) {
       status = 'Winner: ' + winner;
@@ -100,15 +124,14 @@ class Game extends React.Component {
     return (
       <div className="game">
         <div className="game-board">
-          <Board 
-	    squares={current.squares}
-	    onClick={(i) => this.handleClick(i)}
-	  />
-        
-	</div>
+          <Board
+            squares={current.squares}
+            onClick={(i) => this.handleClick(i)}
+          />
+        </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{/* TODO */}</ol>
+          <ol>{playList}</ol>
         </div>
       </div>
     );
@@ -136,6 +159,8 @@ function calculateWinner(squares) {
   }
   return null;
 }
+
+// ========================================
 
 ReactDOM.render(
   <Game />,
